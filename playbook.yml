@@ -1,0 +1,66 @@
+---
+
+- name: automated vertification
+  hosts: ssh
+  tasks:
+     - name: RUN'Install'
+       apt: 
+         name: "{{ item }}"
+         state: latest
+       with_items: 
+
+          - nginx
+          - curl
+          - git
+         
+     - name: RUN'Start nginx'
+       shell: service nginx start
+       ignore_errors: yes
+
+
+     - name: RUN'Depot'
+       shell: curl -sL https://deb.nodesource.com/setup_6.x -o nodesource_setup.sh
+     
+
+     - name: RUN'Script'  
+       shell: bash nodesource_setup.sh
+
+     - name: RUN'Install nodejs'
+       apt:
+         name: nodejs
+         state: latest
+
+     - name: RUN'clone git'
+       git: >
+         repo=https://git.mrzee.fr/student/my-node-project.git
+         dest=/var/www/my-node-project
+
+
+     - name: RUN'pm2'
+       npm:
+         name: pm2
+         global: yes
+         state: present
+
+     - name: RUN'npm install'
+       command: npm install 
+       args:
+         chdir: /var/www/my-node-project/myapp
+
+
+     - name: RUN'pm2 start'
+       command: pm2 start ./bin/www
+       args:
+         chdir: /var/www/my-node-project/myapp
+       ignore_errors: yes
+
+     - name: RUN'copie'
+       copy:
+         src: /var/www/my-node-project/vhost
+         dest: /etc/nginx/sites-enabled/default
+         remote_src: yes
+
+     - name: RUN'Restart'
+       shell: service nginx restart
+
+...
